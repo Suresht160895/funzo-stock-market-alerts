@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Funzo Stock Alerts</title>
+    <link rel="stylesheet" href="./src/style.css" />
+    <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+  </head>
+  <body>
+    <div id="app">
+      <!-- App Header -->
+      <header class="glass" style="padding: 24px; position: sticky; top: 0; z-index: 100;">
+        <div class="flex-row">
+          <div>
+            <span class="label-sm">Terminal</span>
+            <h1 style="font-size: 1.5rem;">Funzo</h1>
+          </div>
+          <div class="btn btn-ghost">
+            <i class="material-symbols-outlined">search</i>
+          </div>
+        </div>
+      </header>
+
+      <!-- Page Content -->
+      <main id="main-content" style="padding: 20px 20px 100px 20px;">
+        <div id="page-mount"></div>
+      </main>
+
+      <!-- Bottom Navigation -->
+      <nav class="bottom-nav glass">
+        <a href="#" class="nav-item active" data-page="dashboard">
+          <i class="material-symbols-outlined">show_chart</i>
+          <span>Markets</span>
+        </a>
+        <a href="#" class="nav-item" data-page="alerts">
+          <i class="material-symbols-outlined">notifications_active</i>
+          <span>Alerts</span>
+        </a>
+        <a href="#" class="nav-item" data-page="billing">
+          <i class="material-symbols-outlined">payments</i>
+          <span>Billing</span>
+        </a>
+        <a href="#" class="nav-item" data-page="profile">
+          <i class="material-symbols-outlined">person</i>
+          <span>Profile</span>
+        </a>
+      </nav>
+    </div>
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>

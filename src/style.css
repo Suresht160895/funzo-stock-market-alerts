@@ -1,0 +1,177 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0');
+
+:root {
+  /* Colors */
+  --color-background: #0b1326;
+  --color-surface: #0b1326;
+  --color-surface-low: #131b2e;
+  --color-surface-high: #222a3d;
+  --color-surface-highest: #2d3449;
+  
+  --color-primary: #b4c5ff;
+  --color-primary-container: #001442;
+  --color-on-primary: #002a78;
+  
+  --color-secondary: #4edea3; /* Gains */
+  --color-on-secondary: #003824;
+  
+  --color-error: #ffb4ab; /* Loss */
+  --color-on-error: #690005;
+  
+  --color-tertiary: #ffb95f; /* Alert */
+  --color-on-tertiary: #472a00;
+  
+  --color-outline: #45464d;
+  --color-on-surface-variant: #c6c6cd;
+
+  /* Typography */
+  --font-editorial: 'Manrope', sans-serif;
+  --font-utility: 'Inter', sans-serif;
+
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  
+  /* Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+
+  /* Effects */
+  --glass-bg: rgba(45, 52, 73, 0.6);
+  --glass-blur: blur(20px);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background-color: var(--color-background);
+  color: #dae2fd;
+  font-family: var(--font-utility);
+  line-height: 1.5;
+  overflow-x: hidden;
+  user-select: none;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-editorial);
+  font-weight: 700;
+}
+
+/* Tonal Layering (The "No-Line" Rule) */
+.surface-low { background-color: var(--color-surface-low); }
+.surface-high { background-color: var(--color-surface-high); }
+.surface-highest { background-color: var(--color-surface-highest); }
+
+.card {
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface-high);
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.card:active {
+  transform: scale(0.98);
+  background-color: var(--color-surface-highest);
+}
+
+/* Glassmorphism */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 24px;
+  border-radius: var(--radius-full);
+  font-family: var(--font-editorial);
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  gap: var(--spacing-sm);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--color-primary), #89a3ff);
+  color: var(--color-on-primary);
+}
+
+.btn-alert {
+  background-color: var(--color-tertiary);
+  color: var(--color-on-tertiary);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--color-primary);
+}
+
+.btn:active {
+  transform: scale(0.95);
+  opacity: 0.9;
+}
+
+/* Typography Scales */
+.display-lg { font-size: 3.5rem; line-height: 1.1; letter-spacing: -0.02em; }
+.headline-md { font-size: 1.75rem; line-height: 1.2; }
+.label-sm { font-size: 0.6875rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--color-on-surface-variant); }
+
+/* Tabular Figures for Numbers */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.gain { color: var(--color-secondary); }
+.loss { color: var(--color-error); }
+
+/* Layout Helpers */
+.flex-row { display: flex; align-items: center; justify-content: space-between; }
+.flex-col { display: flex; flex-direction: column; gap: var(--spacing-md); }
+
+/* Bottom Navigation */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 72px;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding-bottom: env(safe-area-inset-bottom);
+  z-index: 1000;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-on-surface-variant);
+  text-decoration: none;
+  font-size: 0.75rem;
+}
+
+.nav-item.active {
+  color: var(--color-primary);
+}
+
+.nav-item i {
+  font-size: 24px;
+}

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Funzo Stock Alerts</string>
+    <string name="title_activity_main">Funzo Stock Alerts</string>
+    <string name="package_name">com.funzo.stockalerts</string>
+    <string name="custom_url_scheme">com.funzo.stockalerts</string>
+</resources>
