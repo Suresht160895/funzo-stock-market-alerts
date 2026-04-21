@@ -4,8 +4,8 @@ const API_KEY = import.meta.env.VITE_STOCK_API_KEY;
 export const StockAPI = {
   async getIndices() {
     try {
-      // Calling local proxy to bypass CORS and get combined NSE+BSE results
-      const response = await fetch('/api/indices');
+      // Use absolute URL for Capacitor/Mobile compatibility
+      const response = await fetch('https://funzo-stock-alerts.onrender.com/api/indices');
       const data = await response.json();
       const results = data.indices || [];
       
@@ -38,9 +38,9 @@ export const StockAPI = {
   async searchStocks(query) {
     if (!query) return [];
     try {
-      // Calling local proxy for search to avoid CORS issues
-      const response = await fetch(`/api/search?query=${query}`);
-      const results = await response.json();
+      // Use absolute URL for Capacitor/Mobile compatibility
+      const response = await fetch(`https://funzo-stock-alerts.onrender.com/api/search?query=${query}`);
+      const data = await response.json();
       return (results || []).map(r => ({
         symbol: r.exchangeCodeNsi || r.exchangeCodeBse || 'N/A',
         name: r.commonName || 'Unknown'
