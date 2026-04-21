@@ -157,6 +157,20 @@ h1, h2, h3, h4 {
 .flex-col { display: flex; flex-direction: column; gap: var(--spacing-md); }
 
 /* Bottom Navigation */
+#search-dropdown {
+  position: fixed;
+  top: 70px;
+  left: 20px;
+  right: 20px;
+  z-index: 2000;
+  display: none;
+  max-height: 70vh;
+  overflow-y: auto;
+  border-bottom-left-radius: var(--radius-xl);
+  border-bottom-right-radius: var(--radius-xl);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+}
+
 .bottom-nav {
   position: fixed;
   bottom: 0;

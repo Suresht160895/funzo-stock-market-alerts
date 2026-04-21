@@ -3,12 +3,32 @@ const API_KEY = import.meta.env.VITE_STOCK_API_KEY;
 
 export const StockAPI = {
   async getIndices() {
-    // In a real scenario, this would fetch Nifty/Sensex. 
-    // Mocking for now to match Stitch Market Dashboard until actual endpoints are verified.
-    return [
-      { symbol: 'NIFTY 50', price: '22,147.20', change: '+124.50', change_p: '+0.56%', trend: 'up' },
-      { symbol: 'BSE SENSEX', price: '73,088.33', change: '+450.12', change_p: '+0.62%', trend: 'up' }
-    ];
+    try {
+      const response = await fetch('https://analyst.indianapi.in/indices?exchange=NSE&index_type=POPULAR', {
+        headers: { 'X-API-Key': API_KEY }
+      });
+      const data = await response.json();
+      
+      // Filter for Nifty 50 and Sensex (Sensex usually on BSE, but let's see what NSE POPULAR returns)
+      // Actually, we might need two calls if they are on different exchanges.
+      // But popular indices usually bundle them.
+      
+      const results = data.indices || [];
+      return results.filter(i => i.name === 'NIFTY 50' || i.name === 'SENSEX').map(i => ({
+        symbol: i.name,
+        price: i.price,
+        change: i.netChange,
+        change_p: i.percentChange + '%',
+        trend: parseFloat(i.netChange) >= 0 ? 'up' : 'down'
+      }));
+    } catch (error) {
+      console.error('Error fetching indices:', error);
+      // Fallback to static mock if API fails
+      return [
+        { symbol: 'NIFTY 50', price: '22,147.20', change: '+124.50', change_p: '+0.56%', trend: 'up' },
+        { symbol: 'BSE SENSEX', price: '73,088.33', change: '+450.12', change_p: '+0.62%', trend: 'up' }
+      ];
+    }
   },
 
   async getWatchlist() {

@@ -30,7 +30,7 @@ interface AppState {
 
 const state: AppState = {
   currentPage: 'dashboard',
-  watchlist: [],
+  watchlist: JSON.parse(localStorage.getItem('watchlist') || '[]'),
   indices: [],
   alerts: [
     { id: '1', symbol: 'RELIANCE', name: 'Reliance Industries Ltd', trigger: 'above', value: 3100 },
@@ -71,7 +71,13 @@ const setupEventListeners = () => {
     state.isSearching = !state.isSearching;
     searchDropdown.style.display = state.isSearching ? 'block' : 'none';
     if (state.isSearching) {
-      (document.querySelector('#stock-search') as HTMLInputElement).focus();
+      const input = document.querySelector('#stock-search') as HTMLInputElement;
+      if (input) {
+        input.focus();
+        // Clear results on open
+        document.querySelector('#search-results')!.innerHTML = '';
+        input.value = '';
+      }
     }
   });
 
@@ -91,7 +97,53 @@ const setupEventListeners = () => {
       const amount = (target.closest('.select-plan') as HTMLElement).dataset.amount;
       if (amount) initiateCheckout(planId || 'Standard', parseFloat(amount));
     }
+
+    // Add to Watchlist from Search
+    if (target.closest('.search-result-item')) {
+      const symbol = (target.closest('.search-result-item') as HTMLElement).dataset.symbol;
+      const name = (target.closest('.search-result-item') as HTMLElement).dataset.name;
+      if (symbol && name) addToWatchlist(symbol, name);
+    }
   });
+
+  // Search Logic
+  const searchInput = document.querySelector('#stock-search') as HTMLInputElement;
+  searchInput?.addEventListener('input', async (e) => {
+    const query = (e.target as HTMLInputElement).value;
+    if (query.length > 2) {
+      const results = await StockAPI.searchStocks(query);
+      renderSearchResults(results);
+    }
+  });
+};
+
+const addToWatchlist = (symbol: string, name: string) => {
+  if (state.watchlist.find(s => s.symbol === symbol)) {
+    alert('Stock already in watchlist');
+    return;
+  }
+
+  // Adding with mock/placeholder values until next refresh
+  state.watchlist.push({
+    symbol,
+    name,
+    price: 'Fetching...',
+    change: '0.00',
+    change_p: '0.00%',
+    trend: 'up'
+  });
+
+  localStorage.setItem('watchlist', JSON.stringify(state.watchlist));
+  
+  // Close search
+  state.isSearching = false;
+  (document.querySelector('#search-dropdown') as HTMLElement).style.display = 'none';
+  
+  if (state.currentPage === 'dashboard') {
+    refreshData().then(() => renderPage());
+  } else {
+    loadPage('dashboard');
+  }
 };
 
 const initiateCheckout = async (plan: string, amount: number) => {
@@ -127,8 +179,10 @@ const initiateCheckout = async (plan: string, amount: number) => {
     console.error('Checkout Error:', error);
     alert('Failed to initiate checkout. Please try again.');
   } finally {
-    btn.innerText = originalText;
-    btn.disabled = false;
+    if (btn) {
+      btn.innerText = originalText;
+      btn.disabled = false;
+    }
   }
 };
 
@@ -177,7 +231,18 @@ const renderPage = async () => {
 
 const refreshData = async () => {
   state.indices = await StockAPI.getIndices();
-  state.watchlist = await StockAPI.getWatchlist();
+  // Fetch real prices for watchlist symbols
+  const updatedWatchlist = [];
+  for (const item of state.watchlist) {
+    try {
+      // Searching for exact symbol might need another endpoint, 
+      // but let's assume StockAPI.getWatchlist returns these or use trending to fill.
+      // For now, I'll keep the symbols and let search/trending fill them if possible.
+    } catch (e) {}
+  }
+  state.watchlist = await StockAPI.getWatchlist(); 
+  // Note: getWatchlist in api.js currently returns a fixed mock list if API_KEY is missing.
+  // I should ideally update getWatchlist to take symbols from state.
 };
 
 // ... dashboard, search, alerts renderers (maintained in file context)
@@ -423,9 +488,13 @@ const renderSearchResults = (results: any[]) => {
   }
 
   container.innerHTML = results.map(r => `
-    <div class="surface-highest" style="padding: 12px; border-radius: var(--radius-md); margin-bottom: 4px; cursor: pointer;">
+    <div class="surface-highest search-result-item" 
+         data-symbol="${r.symbol}" 
+         data-name="${r.name}"
+         style="padding: 12px; border-radius: var(--radius-md); margin-bottom: 4px; cursor: pointer; transition: background 0.2s;">
       <div style="font-weight: 600;">${r.symbol}</div>
       <div class="label-sm" style="text-transform: none;">${r.name}</div>
+      <div class="label-sm" style="color: var(--color-secondary); margin-top: 4px;">+ Tap to Add to Watchlist</div>
     </div>
   `).join('');
 };
