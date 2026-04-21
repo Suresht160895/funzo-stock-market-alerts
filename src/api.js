@@ -44,7 +44,7 @@ export const StockAPI = {
     }
   },
 
-  async searchStocks(query: string) {
+  async searchStocks(query) {
     if (!query) return [];
     try {
       const response = await fetch(`${BASE_URL}/search?name=${query}`, {
