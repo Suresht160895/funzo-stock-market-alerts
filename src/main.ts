@@ -4,18 +4,43 @@ import { StockAPI } from './api.js'
 // --- Types & State ---
 type Page = 'dashboard' | 'alerts' | 'billing' | 'profile';
 
+interface Alert {
+  id: string;
+  symbol: string;
+  name: string;
+  trigger: 'above' | 'below';
+  value: number;
+}
+
 interface AppState {
   currentPage: Page;
   watchlist: any[];
   indices: any[];
+  alerts: Alert[];
   isSearching: boolean;
+  billing: {
+    tier: 'Entry' | 'Standard' | 'Whale';
+    count: number;
+    max: number;
+    dailyRate: number;
+  }
 }
 
 const state: AppState = {
   currentPage: 'dashboard',
   watchlist: [],
   indices: [],
-  isSearching: false
+  alerts: [
+    { id: '1', symbol: 'RELIANCE', name: 'Reliance Industries Ltd', trigger: 'above', value: 3100 },
+    { id: '2', symbol: 'TATAMOTORS', name: 'Tata Motors Limited', trigger: 'below', value: 950 }
+  ],
+  isSearching: false,
+  billing: {
+    tier: 'Standard',
+    count: 2,
+    max: 10,
+    dailyRate: 20
+  }
 };
 
 // --- Core Logic ---
@@ -48,15 +73,20 @@ const setupEventListeners = () => {
     }
   });
 
-  // Search Logic
-  const searchInput = document.querySelector('#stock-search') as HTMLInputElement;
-  searchInput?.addEventListener('input', async (e) => {
-    const query = (e.target as HTMLInputElement).value;
-    if (query.length > 2) {
-      const results = await StockAPI.searchStocks(query);
-      renderSearchResults(results);
+  // Delegation for dynamic buttons
+  document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('.delete-alert')) {
+      const id = (target.closest('.delete-alert') as HTMLElement).dataset.id;
+      if (id) removeAlert(id);
     }
   });
+};
+
+const removeAlert = (id: string) => {
+  state.alerts = state.alerts.filter(a => a.id !== id);
+  state.billing.count = state.alerts.length;
+  renderPage();
 };
 
 const loadPage = async (page: Page) => {
@@ -68,7 +98,9 @@ const loadPage = async (page: Page) => {
   });
   
   const title = document.querySelector('#header-title');
-  if (title) title.textContent = page.charAt(0).toUpperCase() + page.slice(1);
+  const headerSub = document.querySelector('.label-sm');
+  if (title) title.textContent = page === 'alerts' ? 'Terminal' : page.charAt(0).toUpperCase() + page.slice(1);
+  if (headerSub) headerSub.textContent = page === 'alerts' ? 'Alert Terminal' : 'The Sovereign Terminal';
 
   renderPage();
 };
@@ -81,8 +113,10 @@ const renderPage = async () => {
     mount.innerHTML = `<div class="flex-col" style="padding: 20px 20px 100px 20px;"><div class="loading">Syncing Terminal...</div></div>`;
     await refreshData();
     mount.innerHTML = renderDashboard();
+  } else if (state.currentPage === 'alerts') {
+    mount.innerHTML = renderAlerts();
   } else {
-    mount.innerHTML = `<div class="flex-col" style="padding: 80px 20px; text-align: center; opacity: 0.5;">
+    mount.innerHTML = `<div class="flex-col" style="padding: 120px 20px; text-align: center; opacity: 0.5;">
       <i class="material-symbols-outlined" style="font-size: 48px;">construction</i>
       <h2 class="headline-md">${state.currentPage.toUpperCase()}</h2>
       <p>Component under construction in The Sovereign Terminal.</p>
@@ -93,6 +127,101 @@ const renderPage = async () => {
 const refreshData = async () => {
   state.indices = await StockAPI.getIndices();
   state.watchlist = await StockAPI.getWatchlist();
+};
+
+// ... dashboard and search renderers (moved to help file size but actually within same file in real execution)
+
+// --- Alerts Component ---
+
+const renderAlerts = () => {
+  return `
+    <div class="flex-col" style="padding: 20px 20px 100px 20px;">
+      <!-- Billing Status -->
+      <section class="surface-low ghost-border" style="padding: 20px; border-radius: var(--radius-xl); margin-bottom: 20px;">
+        <div class="flex-row">
+          <span class="label-sm">Billing Active</span>
+          <span class="label-sm gain">₹${state.billing.dailyRate}/day</span>
+        </div>
+        <div style="margin: 16px 0;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span style="font-weight: 700;">${state.billing.tier} Plan</span>
+            <span class="label-sm">${state.billing.count}/${state.billing.max} Stocks</span>
+          </div>
+          <div style="height: 4px; background: var(--color-surface-high); border-radius: 2px;">
+            <div style="width: ${(state.billing.count / state.billing.max) * 100}%; height: 100%; background: var(--color-primary); border-radius: 2px; box-shadow: 0 0 8px var(--color-primary);"></div>
+          </div>
+        </div>
+        <p style="font-size: 0.75rem; color: var(--color-on-surface-variant);">
+          Next tier at 11 stocks. Real-time push monitoring active.
+        </p>
+      </section>
+
+      <!-- Configure Alert -->
+      <section class="surface-high shadow-premium" style="padding: 24px; border-radius: var(--radius-xl); margin-bottom: 24px;">
+        <h2 class="headline-md" style="margin-bottom: 16px;">Configure Alert</h2>
+        
+        <div class="flex-col" style="gap: 12px;">
+          <div>
+            <label class="label-sm">Select Symbol</label>
+            <div class="surface-low ghost-border" style="padding: 12px; border-radius: var(--radius-md); margin-top: 4px; color: var(--color-on-surface-variant);">
+              Select Stock...
+            </div>
+          </div>
+          
+          <div class="flex-row" style="gap: 12px;">
+            <div style="flex: 1;">
+              <label class="label-sm">Trigger</label>
+              <select style="width: 100%; background: var(--color-surface-low); border: var(--ghost-border); padding: 12px; border-radius: var(--radius-md); color: white; margin-top: 4px;">
+                <option>Price Above</option>
+                <option>Price Below</option>
+              </select>
+            </div>
+            <div style="flex: 1;">
+              <label class="label-sm">Value (₹)</label>
+              <input type="number" placeholder="0.00" style="width: 100%; background: var(--color-surface-low); border: var(--ghost-border); padding: 12px; border-radius: var(--radius-md); color: white; margin-top: 4px; outline: none;">
+            </div>
+          </div>
+
+          <div class="surface-low" style="padding: 12px; border-radius: var(--radius-md); opacity: 0.8; font-size: 0.75rem;">
+            <span class="label-sm" style="display: block; margin-bottom: 4px;">Plan Impact</span>
+            Activating this alert will bring your total to ${state.billing.count + 1}/${state.billing.max} stocks.
+          </div>
+
+          <button class="btn btn-primary" style="width: 100%; margin-top: 8px;">
+            Set Pulse Monitor
+          </button>
+        </div>
+      </section>
+
+      <!-- Active Monitors -->
+      <section>
+        <div class="flex-row" style="margin-bottom: 16px;">
+          <h2 class="headline-md">Active Monitors</h2>
+          <span class="label-sm">${state.alerts.length} Pulses</span>
+        </div>
+        
+        <div class="flex-col">
+          ${state.alerts.length === 0 ? `
+            <div class="surface-low" style="padding: 40px; text-align: center; border-radius: var(--radius-lg); opacity: 0.4;">
+              No active monitors set.
+            </div>
+          ` : state.alerts.map(alert => `
+            <div class="surface-low card ghost-border flex-row" style="padding: 16px;">
+              <div style="flex: 1;">
+                <div style="font-weight: 700; font-family: var(--font-editorial);">${alert.symbol}</div>
+                <div class="label-sm" style="text-transform: none;">
+                  Notify when ${alert.trigger} ₹${alert.value}
+                </div>
+              </div>
+              <div class="delete-alert" data-id="${alert.id}" style="color: var(--color-error); cursor: pointer;">
+                <i class="material-symbols-outlined">delete_sweep</i>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </section>
+    </div>
+  `;
 };
 
 const startAutoRefresh = () => {
