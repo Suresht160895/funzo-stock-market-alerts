@@ -30,7 +30,7 @@ export const StockAPI = {
         headers: { 'x-api-key': API_KEY }
       });
       const data = await response.json();
-      return data.slice(0, 4).map((s: any) => ({
+      return data.slice(0, 4).map((s) => ({
         symbol: s.symbol,
         name: s.name,
         price: s.lastPrice || '0.00',
