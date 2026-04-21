@@ -107,7 +107,7 @@ app.get('/api/search', async (req, res) => {
 app.get('/health', (req, res) => res.send('OK'));
 
 // Catch-all to serve index.html for SPA routing
-app.get('*', (req, res) => {
+app.get('(.*)', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
