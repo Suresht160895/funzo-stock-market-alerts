@@ -2,6 +2,8 @@ import './style.css'
 import { StockAPI } from './api.js'
 
 // --- Types & State ---
+declare const Cashfree: any; // From index.html script
+
 type Page = 'dashboard' | 'alerts' | 'billing' | 'profile';
 
 interface Alert {
@@ -76,11 +78,58 @@ const setupEventListeners = () => {
   // Delegation for dynamic buttons
   document.addEventListener('click', (e) => {
     const target = e.target as HTMLElement;
+    
+    // Delete Alert
     if (target.closest('.delete-alert')) {
       const id = (target.closest('.delete-alert') as HTMLElement).dataset.id;
       if (id) removeAlert(id);
     }
+    
+    // Plan Selection (Checkout)
+    if (target.closest('.select-plan')) {
+      const planId = (target.closest('.select-plan') as HTMLElement).dataset.plan;
+      const amount = (target.closest('.select-plan') as HTMLElement).dataset.amount;
+      if (amount) initiateCheckout(planId || 'Standard', parseFloat(amount));
+    }
   });
+};
+
+const initiateCheckout = async (plan: string, amount: number) => {
+  const btn = document.querySelector(`[data-plan="${plan}"]`) as HTMLButtonElement;
+  const originalText = btn.innerText;
+  btn.innerText = 'INITIALIZING...';
+  btn.disabled = true;
+
+  try {
+    const response = await fetch('/create-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        order_amount: amount,
+        customer_details: {
+          customer_id: `user_${Date.now()}`,
+          customer_email: 'customer@example.com',
+          customer_phone: '9999999999'
+        }
+      })
+    });
+    
+    const data = await response.json();
+    
+    if (data.payment_session_id) {
+      const cashfree = Cashfree({ mode: "production" });
+      await cashfree.checkout({
+        paymentSessionId: data.payment_session_id,
+        returnUrl: `https://funzo-stock-alerts.onrender.com/verify?order_id=${data.order_id}`,
+      });
+    }
+  } catch (error) {
+    console.error('Checkout Error:', error);
+    alert('Failed to initiate checkout. Please try again.');
+  } finally {
+    btn.innerText = originalText;
+    btn.disabled = false;
+  }
 };
 
 const removeAlert = (id: string) => {
@@ -99,8 +148,8 @@ const loadPage = async (page: Page) => {
   
   const title = document.querySelector('#header-title');
   const headerSub = document.querySelector('.label-sm');
-  if (title) title.textContent = page === 'alerts' ? 'Terminal' : page.charAt(0).toUpperCase() + page.slice(1);
-  if (headerSub) headerSub.textContent = page === 'alerts' ? 'Alert Terminal' : 'The Sovereign Terminal';
+  if (title) title.textContent = page === 'billing' ? 'Portal' : (page === 'alerts' ? 'Terminal' : page.charAt(0).toUpperCase() + page.slice(1));
+  if (headerSub) headerSub.textContent = page === 'billing' ? 'Billing & Subscription' : (page === 'alerts' ? 'Alert Terminal' : 'The Sovereign Terminal');
 
   renderPage();
 };
@@ -115,6 +164,8 @@ const renderPage = async () => {
     mount.innerHTML = renderDashboard();
   } else if (state.currentPage === 'alerts') {
     mount.innerHTML = renderAlerts();
+  } else if (state.currentPage === 'billing') {
+    mount.innerHTML = renderBilling();
   } else {
     mount.innerHTML = `<div class="flex-col" style="padding: 120px 20px; text-align: center; opacity: 0.5;">
       <i class="material-symbols-outlined" style="font-size: 48px;">construction</i>
@@ -127,6 +178,73 @@ const renderPage = async () => {
 const refreshData = async () => {
   state.indices = await StockAPI.getIndices();
   state.watchlist = await StockAPI.getWatchlist();
+};
+
+// ... dashboard, search, alerts renderers (maintained in file context)
+
+// --- Billing Component ---
+
+const renderBilling = () => {
+  const plans = [
+    { id: 'Entry', price: 5, stocks: 2, color: 'var(--color-on-surface-variant)' },
+    { id: 'Standard', price: 20, stocks: 10, color: 'var(--color-primary)', active: true },
+    { id: 'Whale', price: 50, stocks: 30, color: 'var(--color-tertiary)' }
+  ];
+
+  return `
+    <div class="flex-col" style="padding: 20px 20px 100px 20px;">
+      <!-- Current Status -->
+      <section class="surface-high shadow-premium" style="padding: 24px; border-radius: var(--radius-xl); margin-bottom: 24px; border-left: 4px solid var(--color-primary);">
+        <span class="label-sm">Active Plan</span>
+        <h2 class="display-lg" style="font-size: 2.5rem; margin: 8px 0;">${state.billing.tier}</h2>
+        <div class="flex-row">
+          <span style="font-weight: 600;">₹${state.billing.dailyRate}/day</span>
+          <span class="label-sm">${state.billing.count}/${state.billing.max} Stocks Monitored</span>
+        </div>
+      </section>
+
+      <!-- Plans -->
+      <h2 class="headline-md" style="margin-bottom: 20px;">Upgrade Capability</h2>
+      
+      <div class="flex-col" style="gap: 16px;">
+        ${plans.map(p => `
+          <div class="surface-low ghost-border" style="padding: 24px; border-radius: var(--radius-xl); position: relative; border-left: ${p.active ? '4px solid ' + p.color : 'none'};">
+            ${p.active ? `<span class="label-sm gain" style="position: absolute; top: 16px; right: 24px;">Current Plan</span>` : ''}
+            <div class="flex-row" style="margin-bottom: 12px;">
+              <div>
+                <h3 class="headline-md" style="color: ${p.color};">${p.id}</h3>
+                <span class="label-sm">Up to ${p.stocks} Stocks</span>
+              </div>
+              <div style="text-align: right;">
+                <div style="font-size: 1.5rem; font-weight: 700;">₹${p.price}</div>
+                <span class="label-sm">per day</span>
+              </div>
+            </div>
+            <ul style="list-style: none; margin-bottom: 20px; font-size: 0.875rem; color: var(--color-on-surface-variant);">
+              <li style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                <i class="material-symbols-outlined" style="font-size: 16px; color: var(--color-secondary);">check_circle</i>
+                Real-time NSE/BSE Pulse
+              </li>
+              <li style="display: flex; align-items: center; gap: 8px;">
+                <i class="material-symbols-outlined" style="font-size: 16px; color: var(--color-secondary);">check_circle</i>
+                Push Notification Alerts
+              </li>
+            </ul>
+            <button class="btn ${p.active ? 'btn-ghost' : 'btn-primary'} select-plan" 
+                    data-plan="${p.id}" data-amount="${p.price}"
+                    style="width: 100%;" ${p.active ? 'disabled' : ''}>
+              ${p.active ? 'Plan Active' : 'Switch to ' + p.id}
+            </button>
+          </div>
+        `).join('')}
+      </div>
+
+      <!-- Compliance -->
+      <p style="margin-top: 24px; font-size: 0.65rem; color: var(--color-on-surface-variant); text-align: center; line-height: 1.4;">
+        Payments secured by Cashfree. Daily billing cycles apply. By switching plans, your current balance will be adjusted accordingly.
+      </p>
+    </div>
+  `;
 };
 
 // ... dashboard and search renderers (moved to help file size but actually within same file in real execution)
