@@ -203,7 +203,7 @@ const loadPage = async (page: Page) => {
   const title = document.querySelector('#header-title');
   const headerSub = document.querySelector('.label-sm');
   if (title) title.textContent = page === 'billing' ? 'Portal' : (page === 'alerts' ? 'Terminal' : page.charAt(0).toUpperCase() + page.slice(1));
-  if (headerSub) headerSub.textContent = page === 'billing' ? 'Billing & Subscription' : (page === 'alerts' ? 'Alert Terminal' : 'The Sovereign Terminal');
+  if (headerSub) headerSub.textContent = page === 'billing' ? 'Billing & Subscription' : (page === 'alerts' ? 'Alert Terminal' : 'Funzo Stock Alerts');
 
   renderPage();
 };
@@ -224,7 +224,7 @@ const renderPage = async () => {
     mount.innerHTML = `<div class="flex-col" style="padding: 120px 20px; text-align: center; opacity: 0.5;">
       <i class="material-symbols-outlined" style="font-size: 48px;">construction</i>
       <h2 class="headline-md">${state.currentPage.toUpperCase()}</h2>
-      <p>Component under construction in The Sovereign Terminal.</p>
+      <p>Component under construction in Funzo Stock Alerts.</p>
     </div>`;
   }
 };
