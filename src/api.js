@@ -1,4 +1,4 @@
-const BASE_URL = 'https://analyst.indianapi.in';
+const BASE_URL = 'https://www.alphavantage.co';
 const API_KEY = import.meta.env.VITE_STOCK_API_KEY;
 
 export const StockAPI = {
@@ -9,13 +9,13 @@ export const StockAPI = {
       const data = await response.json();
       const results = data.indices || [];
       
-      // Map and prioritize NIFTY 50 and SENSEX
-      return results.filter(i => i.name === 'NIFTY 50' || i.name === 'SENSEX').map(i => ({
+      // Map global quotes from Alpha vantage
+      return results.map(i => ({
         symbol: i.name,
-        price: i.price,
-        change: i.netChange,
-        change_p: i.percentChange + '%',
-        trend: parseFloat(i.netChange) >= 0 ? 'up' : 'down'
+        price: parseFloat(i.price).toFixed(2),
+        change: parseFloat(i.change).toFixed(2),
+        change_p: parseFloat(i.percentChange).toFixed(2) + '%',
+        trend: parseFloat(i.change) >= 0 ? 'up' : 'down'
       }));
     } catch (error) {
       console.error('Error fetching indices:', error);
@@ -41,9 +41,9 @@ export const StockAPI = {
       // Use absolute URL for Capacitor/Mobile compatibility
       const response = await fetch(`https://funzo-stock-alerts.onrender.com/api/search?query=${query}`);
       const data = await response.json();
-      return (results || []).map(r => ({
-        symbol: r.exchangeCodeNsi || r.exchangeCodeBse || 'N/A',
-        name: r.commonName || 'Unknown'
+      return (data.bestMatches || []).map(r => ({
+        symbol: r['1. symbol'] || 'N/A',
+        name: r['2. name'] || 'Unknown'
       }));
     } catch (error) {
       console.error('Search error:', error);

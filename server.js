@@ -22,7 +22,7 @@ const STOCK_API_KEY = process.env.VITE_STOCK_API_KEY;
 
 // Base configuration
 const CF_BASE_URL = 'https://api.cashfree.com/pg/orders';
-const STOCK_BASE_URL = 'https://analyst.indianapi.in';
+const STOCK_BASE_URL = 'https://www.alphavantage.co/query';
 
 // Health check and heartbeat (Place before static)
 app.get('/health', (req, res) => res.send('OK'));
@@ -32,13 +32,27 @@ app.get('/api/ping', (req, res) => res.json({ status: 'active', timestamp: new D
 app.get('/api/indices', async (req, res) => {
   console.log('Incoming request: /api/indices');
   try {
-    const headers = { 'X-API-Key': STOCK_API_KEY };
-    const nseReq = axios.get(`${STOCK_BASE_URL}/indices?exchange=NSE&index_type=POPULAR`, { headers });
-    const bseReq = axios.get(`${STOCK_BASE_URL}/indices?exchange=BSE&index_type=POPULAR`, { headers });
-    const [nseRes, bseRes] = await Promise.allSettled([nseReq, bseReq]);
-    const combinedIndices = [];
-    if (nseRes.status === 'fulfilled') combinedIndices.push(...(nseRes.value.data.indices || []));
-    if (bseRes.status === 'fulfilled') combinedIndices.push(...(bseRes.value.data.indices || []));
+    // Alpha Vantage uses GLOBAL_QUOTE for specific symbols. 
+    const symbols = ['IBM', 'AAPL']; // Fallback options for indices
+    const promises = symbols.map(symbol => 
+      axios.get(`${STOCK_BASE_URL}?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${STOCK_API_KEY}`)
+    );
+    const results = await Promise.allSettled(promises);
+    
+    const combinedIndices = results.map(r => {
+      if (r.status === 'fulfilled' && r.value.data['Global Quote']) {
+        const quote = r.value.data['Global Quote'];
+        if (!quote['01. symbol']) return null;
+        return {
+          name: quote['01. symbol'],
+          price: quote['05. price'],
+          netChange: quote['09. change'],
+          percentChange: quote['10. change percent'].replace('%', '')
+        };
+      }
+      return null;
+    }).filter(Boolean);
+    
     res.json({ indices: combinedIndices });
   } catch (error) {
     console.error('Indices Proxy Error:', error.message);
@@ -51,9 +65,7 @@ app.get('/api/search', async (req, res) => {
   const { query } = req.query;
   console.log(`Incoming request: /api/search?query=${query}`);
   try {
-    const response = await axios.get(`${STOCK_BASE_URL}/industry_search?query=${query}`, {
-      headers: { 'X-API-Key': STOCK_API_KEY }
-    });
+    const response = await axios.get(`${STOCK_BASE_URL}?function=SYMBOL_SEARCH&keywords=${query}&apikey=${STOCK_API_KEY}`);
     res.json(response.data);
   } catch (error) {
     console.error('Search Proxy Error:', error.message);
